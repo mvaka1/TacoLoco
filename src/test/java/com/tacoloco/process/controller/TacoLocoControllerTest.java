@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -33,27 +34,33 @@ public class TacoLocoControllerTest{
 	
 	ObjectMapper jsonmapper = new ObjectMapper();
 	
+	TacoOrderResponse orderresponse = new TacoOrderResponse();
+	
+	List<TacoOrders> tacoOrders = new ArrayList<>();
+	
 	@MockBean
 	TacoLocoService tacoService;
-	/**
-	 * this test to check if the post resource is established 
-	 * @throws Exception
-	 */
-	@Test
-	public void getPostTest() throws Exception{
+	
+	@Before
+	public void init() {
 		TacoOrders to1 = new TacoOrders();
 		to1.setOrderName("Veggie Taco");
 		to1.setQuantity(1);
 		TacoOrders to2 = new TacoOrders();
 		to2.setOrderName("Chorizo Taco");
 		to2.setQuantity(2);
-		List<TacoOrders> tacoOrders = new ArrayList<>();
 		tacoOrders.add(to1);
 		tacoOrders.add(to2);
 		OrderWrapper orderwrap = new OrderWrapper();
 		orderwrap.setOrders(tacoOrders);
-		TacoOrderResponse orderresponse = new TacoOrderResponse();
 		orderresponse.setOrderTotalCost(9.50);
+	}
+	/**
+	 * this test to check if the post resource is established 
+	 * @throws Exception
+	 */
+	@Test
+	public void getPostTest() throws Exception{
 		Mockito.when(
 				tacoService.calculateTotal(tacoOrders)).thenReturn(orderresponse.getOrderTotalCost());
 		String jsonContent = "{" + 
@@ -75,27 +82,29 @@ public class TacoLocoControllerTest{
 	
 	}
 	/**
-	 * This test to check the business logic of calculating roll ups
+	 * This test to check the business logic of calculating roll ups, 
+	 * here the quantity of total order is less than 4, so no discount
 	 * @throws Exception
 	 */
 	@Test
-	public void getTotalTest() throws Exception{
+	public void getTotalTestWithNoDiscount() throws Exception{
 		TacoLocoService tacosrvc = new TacoLocoService();
-		TacoOrders to1 = new TacoOrders();
-		to1.setOrderName("Veggie Taco");
-		to1.setQuantity(1);
-		TacoOrders to2 = new TacoOrders();
-		to2.setOrderName("Chorizo Taco");
-		to2.setQuantity(2);
-		List<TacoOrders> tacoOrders = new ArrayList<>();
-		tacoOrders.add(to1);
-		tacoOrders.add(to2);
-		OrderWrapper orderwrap = new OrderWrapper();
-		orderwrap.setOrders(tacoOrders);
-		TacoOrderResponse orderresponse = new TacoOrderResponse();
-		orderresponse.setOrderTotalCost(9.50);
 		Assert.assertEquals(orderresponse.getOrderTotalCost(), tacosrvc.calculateTotal(tacoOrders), 0.001);
-
+	}
 	
+	/**
+	 * This test to check the business logic of calculating roll ups, 
+	 * here the quantity of total order is 5 (which is greater or equal to 4),
+	 * 20% discount to total order is applied
+	 * @throws Exception
+	 */
+	@Test
+	public void getTotalTestWith20PercentDiscount() throws Exception{
+			TacoLocoService tacosrvc = new TacoLocoService();
+			TacoOrders to3 = new TacoOrders();
+			to3.setOrderName("Chicken Taco");
+			to3.setQuantity(2);
+			tacoOrders.add(to3);
+			Assert.assertEquals(12.4, tacosrvc.calculateTotal(tacoOrders), 0.001);
 	}
 }
